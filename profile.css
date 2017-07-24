@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css?family=Noto+Serif');
+@import url('https://fonts.googleapis.com/css?family=Noto+Sans');
+body {
+  font-family: 'Noto Sans', 'Helvetica', sans-serif;
+  font-size: medium;
+  max-width: 800px;
+  margin: auto;
+}
+img {
+  -webkit-clip-path: circle(75px at center);
+  clip-path: circle(75px at center);
+  max-width: 100%;
+}
+header > .flex-container {
+  justify-content: center;
+}
+.flex-container {
+  display: flex;
+  flex-flow: row wrap;
+}
+.flex-item-left {
+  flex: 0 0 150px;
+  text-align: right;
+  padding: 8px;
+}
+.flex-item-right {
+  flex: 1;
+  padding: 8px;
+}
+.separator {
+  border-left: 1px solid grey;
+}
+.section {
+  font-size: large;
+  padding: 8px;
+}
+#name {
+  font-family: 'Noto Serif', 'Georgia', serif;
+  text-align: center;
+  font-size: 2em;
+  border-bottom: 1px solid grey;
+  width: 100%;
+  padding: 16px;
+}
+
+@media screen and (max-width: 480px) {
+  header > .flex-container > .flex-item-left {
+    order: -1;
+  }
+  main > .flex-container > .flex-item-left {
+    flex: 1 1 100%;
+    text-align: left;
+  }
+  main > .flex-container > .flex-item-right {
+    flex: 1 1 100%;
+  }
+  .separator {
+    border-left: none;
+  }
+}
