@@ -7,6 +7,7 @@
   @import url('https://fonts.googleapis.com/css?family=Noto+Sans');
   body {
     font-family: 'Noto Sans', 'Helvetica', sans-serif;
+    font-size: medium;
     max-width: 800px;
     margin: auto;
   }
@@ -18,25 +19,27 @@
   header > .flex-container {
     justify-content: center;
   }
+  main > .flex-container {
+    font-size: small;
+  }
   .flex-container {
     display: flex;
     flex-flow: row wrap;
   }
   .flex-item-left {
-    flex: 0 auto;
-    min-width: 150px;
-    text-align: left;
+    flex: 0 0 150px;
+    text-align: right;
     padding: 8px;
   }
   .flex-item-right {
-    flex: 1 auto;
+    flex: 1;
     padding: 8px;
   }
   .separator {
     border-left: 1px solid grey;
   }
   .section {
-    font-size: 1.2em;
+    font-size: large;
     padding: 8px;
   }
   #name {
@@ -51,6 +54,13 @@
   @media screen and (max-width: 480px) {
     header > .flex-container > .flex-item-left {
       order: -1;
+    }
+    main > .flex-container > .flex-item-left {
+      flex: 1 1 100%;
+      text-align: left;
+    }
+    main > .flex-container > .flex-item-right {
+      flex: 1 1 100%;
     }
     .separator {
       border-left: none;
@@ -79,18 +89,14 @@
   <main>
     <div class='section'>Education</div>
     <div class='flex-container'>
-      <div class='flex-item-left'>
-        08/2017 - Present
-      </div>
+      <div class='flex-item-left'>08/2017 - Present</div>
       <div class="flex-item-right separator">
         <b>Georgia Tech in Atlanta, GA, U.S.A.</b><br>
         Ph.D. Student
       </div>
     </div>
     <div class='flex-container'>
-      <div class='flex-item-left'>
-        03/2000 - 06/2008
-      </div>
+      <div class='flex-item-left'>03/2000 - 06/2008</div>
       <div class="flex-item-right separator">
         <b>Ajou University in Suwon, South Korea</b><br>
         B.S. in Digital Media (intensive major course)<br>
