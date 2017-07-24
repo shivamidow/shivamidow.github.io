@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css?family=Noto+Serif');
 @import url('https://fonts.googleapis.com/css?family=Noto+Sans');
 body {
-  font-family: 'Noto Sans', 'Helvetica', sans-serif;
+  font-family: 'AppleSDGothicNeo-Light', 'HelveticaNeue-Thin', 'Noto Sans', sans-serif;
   font-size: medium;
   max-width: 800px;
   margin: auto;
@@ -35,7 +35,7 @@ header > .flex-container {
   padding: 8px;
 }
 #name {
-  font-family: 'Noto Serif', 'Georgia', serif;
+  font-family: 'Georgia', 'Noto Serif', serif;
   text-align: center;
   font-size: xx-large;
   border-bottom: 1px solid grey;
