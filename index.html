@@ -4,52 +4,107 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   @import url('https://fonts.googleapis.com/css?family=Noto+Serif');
+  @import url('https://fonts.googleapis.com/css?family=Noto+Sans');
   body {
-    font-family: 'Noto Serif', 'Georgia', serif;
+    font-family: 'Noto Sans', 'Helvetica', sans-serif;
+    max-width: 800px;
+    margin: auto;
   }
   img {
     -webkit-clip-path: circle(75px at center);
     clip-path: circle(75px at center);
     max-width: 100%;
   }
-  .container {
+  header > .flex-container {
+    justify-content: center;
+  }
+  .flex-container {
     display: flex;
     flex-flow: row wrap;
+  }
+  .flex-item-left {
+    flex: 0 auto;
+    min-width: 150px;
+    text-align: left;
     padding: 8px;
   }
-  .flex-item1 {
-    flex: 0 auto;
-  }
-  .flex-item2 {
+  .flex-item-right {
     flex: 1 auto;
-    padding-left: 8px;
+    padding: 8px;
+  }
+  .separator {
+    border-left: 1px solid grey;
+  }
+  .section {
+    font-size: 1.2em;
+    padding: 8px;
   }
   #name {
+    font-family: 'Noto Serif', 'Georgia', serif;
     text-align: center;
-    font-size: 200%;
+    font-size: 2em;
     border-bottom: 1px solid grey;
+    width: 100%;
     padding: 8px;
+  }
+
+  @media screen and (max-width: 480px) {
+    header > .flex-container > .flex-item-left {
+      order: -1;
+    }
+    .separator {
+      border-left: none;
+    }
   }
 </style>
 </head>
 <body>
-<header style='background-color:yellow'>
-  <div id='name'>ChangSeok Oh</div>
-  <div class='container' style="background-color:blue;">
-    <picture class='flex-item1'>
-      <img src="changseok.jpg">
-    </picture>
-    <div class='flex-item2' style="background-color:grey;">
-      Ph.D. Student<br>
-      School of Computer Science<br>
-      College of Computing<br>
-      Georgia Institute of Technology<br>
+  <header>
+    <div class='flex-container'>
+      <div id='name'>ChangSeok Oh</div>
+      <div class='flex-item-left'>
+        <picture>
+          <img src="changseok.jpg">
+        </picture>
+      </div>
+      <div class='flex-item-right'>
+        Ph.D. Student<br>
+        School of Computer Science<br>
+        College of Computing<br>
+        Georgia Institute of Technology<br>
+        Blog : http://medium.com/@changseok
+      </div>
     </div>
-  </div>
-</header>
-<main style='background-color:pink'>
-  <div>Experience</div>
-  <div>Education</div>
-</main>
+  </header>
+  <main>
+    <div class='section'>Education</div>
+    <div class='flex-container'>
+      <div class='flex-item-left'>
+        08/2017 - Present
+      </div>
+      <div class="flex-item-right separator">
+        <b>Georgia Tech in Atlanta, GA, U.S.A.</b><br>
+        Ph.D. Student
+      </div>
+    </div>
+    <div class='flex-container'>
+      <div class='flex-item-left'>
+        03/2000 - 06/2008
+      </div>
+      <div class="flex-item-right separator">
+        <b>Ajou University in Suwon, South Korea</b><br>
+        B.S. in Digital Media (intensive major course)<br>
+        B.S. in Information and Computer Engineering (second major)
+      </div>
+    </div>
+    <div class='section'>Experience</div>
+    <div class='flex-container'>
+      <div class='flex-item-left'>06/2016 - 07/2017</div>
+      <div class="flex-item-right separator">
+        <b>Research associate at School of Computer Science, Georgia Tech.</b><br>
+        As a research scientist, I worked on research projects in which Georgia Tech partakes for national interests.
+      </div>
+    </div>
+  </main>
 </body>
 </html>
