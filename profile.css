@@ -11,12 +11,12 @@ img {
   clip-path: circle(75px at center);
   max-width: 100%;
 }
-header > .flex-container {
-  justify-content: center;
-}
 .flex-container {
   display: flex;
   flex-flow: row wrap;
+}
+header > .flex-container {
+  justify-content: center;
 }
 .flex-item-left {
   flex: 0 0 150px;
@@ -31,30 +31,38 @@ header > .flex-container {
   border-left: 1px solid grey;
 }
 .section {
-  font-size: large;
+  font-size: x-large;
   padding: 8px;
 }
 #name {
   font-family: 'Noto Serif', 'Georgia', serif;
   text-align: center;
-  font-size: 2em;
+  font-size: xx-large;
   border-bottom: 1px solid grey;
   width: 100%;
-  padding: 16px;
+  padding: 10px;
 }
 
 @media screen and (max-width: 480px) {
+  #name {
+    padding: 0px 8px 8px 8px;
+  }
   header > .flex-container > .flex-item-left {
     order: -1;
   }
   main > .flex-container > .flex-item-left {
     flex: 1 1 100%;
     text-align: left;
+    padding: 0px 8px;
   }
   main > .flex-container > .flex-item-right {
     flex: 1 1 100%;
+    padding: 0px 8px 8px 8px;
   }
   .separator {
     border-left: none;
+  }
+  .empty {
+    display: none;
   }
 }
