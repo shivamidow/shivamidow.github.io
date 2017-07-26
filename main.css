@@ -1,5 +1,20 @@
 @import url('https://fonts.googleapis.com/css?family=Noto+Serif');
 @import url('https://fonts.googleapis.com/css?family=Noto+Sans');
+
+a:link {
+  color: blue;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+a:active {
+  color: fuchsia;
+}
+a:visited {
+  color: dimgray;
+}
+
 body {
   font-family: 'AppleSDGothicNeo-Light', 'HelveticaNeue-Thin', 'Noto Sans', sans-serif;
   font-size: medium;
@@ -11,12 +26,13 @@ img {
   clip-path: circle(75px at center);
   max-width: 100%;
 }
+header > .flex-container {
+  justify-content: center;
+}
+
 .flex-container {
   display: flex;
   flex-flow: row wrap;
-}
-header > .flex-container {
-  justify-content: center;
 }
 .flex-item-left {
   flex: 0 0 150px;
@@ -27,26 +43,24 @@ header > .flex-container {
   flex: 1;
   padding: 8px;
 }
-.separator {
-  border-left: 1px solid grey;
-}
 .section {
   font-size: x-large;
   padding: 8px;
 }
+.separator {
+  border-left: 1px solid gray;
+}
+
 #name {
   font-family: 'Georgia', 'Noto Serif', serif;
   text-align: center;
   font-size: xx-large;
-  border-bottom: 1px solid grey;
+  border-bottom: 1px solid gray;
   width: 100%;
   padding: 10px;
 }
 
 @media screen and (max-width: 480px) {
-  #name {
-    padding: 0px 8px 8px 8px;
-  }
   header > .flex-container > .flex-item-left {
     order: -1;
   }
@@ -59,10 +73,15 @@ header > .flex-container {
     flex: 1 1 100%;
     padding: 0px 8px 8px 8px;
   }
+
   .separator {
     border-left: none;
   }
   .empty {
     display: none;
+  }
+
+  #name {
+    padding: 0px 8px 8px 8px;
   }
 }
