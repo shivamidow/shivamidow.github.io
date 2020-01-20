@@ -65,6 +65,11 @@ header > .flex-container {
   padding: 10px;
 }
 
+.flex-item-right > ul {
+  padding: 0px 0px 0px 15px;
+  margin: 0px;
+}
+
 @media screen and (max-width: 480px) {
   header > .flex-container > .flex-item-left {
     order: -1;
