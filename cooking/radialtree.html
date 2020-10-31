@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+<style>
+body {
+  padding: 0px;
+  margin: 0px;
+  overflow: hidden;
+}
+
+svg text {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+svg text::selection {
+  background: none;
+}
+
+g > text {
+  text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+}
+
+.level-0 {
+  opacity: 0;
+}
+
+.common-third-parties {
+  fill: none;
+  stroke: blue;
+  stroke-width: 1px;
+}
+
+.third-parties-sharing-cookies {
+  fill: none;
+  stroke: red;
+  stroke-width: 1px;
+}
+
+.tooltip {
+  opacity: 0;
+  position: 'absolute';
+  background-color: 'white';
+  border: 'solid';
+  border-width: '2px';
+  border-radius: '5px';
+  padding: '5px';
+}
+</style>
+</head>
+<body>
+  <div id='div_tooltip'></div>
+</body>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+function diagonal(s, d)
+  {
+    return `M ${s.y} ${s.x}
+            C ${(s.y + d.y) / 2} ${s.x},
+              ${(s.y + d.y) / 2} ${d.x},
+              ${d.y} ${d.x}`
+}
+
+var tooltip = d3.select('#div_tooltip')
+  .append("div")
+//  .attr("class", "tooltip")
+  .style("opacity", 0)
+  .style("position", "absolute")
+  .style("background-color", "white")
+  .style("border", "solid")
+  .style("border-width", "2px")
+  .style("border-radius", "5px")
+  .style("padding", "5px")
+  .style("user-select", "none")
+
+const mouseover = function(d) {
+  if (!d.data.value || !d.depth)
+    return;
+
+  tooltip.style("opacity", 1);
+//  d3.select(this).style("stroke", "yellow")
+};
+
+const mousemove = function(d) {
+  if (!d.data.value || !d.depth)
+    return;
+
+  tooltip.html(d.data.value.replaceAll('\n', '<br>'))
+    .style("left", (d3.event.pageX + 1) + "px")
+    .style("top", (d3.event.pageY + 1) + "px")
+};
+
+const mouseleave = function(d) {
+  if (!d.data.value || !d.depth)
+    return;
+
+  tooltip.style("opacity", 0)
+//  d3.select(this).style("stroke", "none")
+};
+
+const svg = d3.select('body')
+  .append("svg")
+  .attr("width", "100%")
+  .attr("height", `${window.innerHeight}px`)
+  .call(d3.zoom().on("zoom", function () {
+    svg.attr("transform", d3.event.transform)
+  }))
+  .append("g");
+
+const radius = window.innerHeight / 2 - 50;
+const tree = d3.tree()
+  .size([2 * Math.PI, radius])
+  .separation((a, b) => (a.parent == b.parent ? 1 : 2) / a.depth);
+
+d3.json("d3js/data.json", function(error, data) {
+  if (error)
+    throw error;
+
+  const gNode = svg.append('g')
+    .attr('cursor', 'pointer')
+    .attr('pointer-events', 'all')
+
+  const gLink = svg.append("g")
+    .attr("fill", "none")
+    .attr("stroke", "#555")
+    .attr("stroke-opacity", 0.4)
+    .attr("stroke-width", 1.5);
+
+  const gLinkForCommonDomain = svg.append('g')
+    .attr('class', 'common-third-parties')
+
+  const gPairLinkSharingCookies = svg.append('g')
+    .attr('class', 'third-parties-sharing-cookies')
+
+  var root = d3.hierarchy(data)
+    .sort((a, b) => d3.ascending(a.data.name, b.data.name));
+
+  root.descendants().forEach((d, i) => {
+    d.id = i;
+    d._children = d.children;
+    if (d.depth && d.depth > 1)
+        d.children = null;
+  });
+  root.x0 = 0;
+  root.y0 = 0;
+
+  var pairSharingDomains = [];
+  var pairSharingCookies = [];
+
+  update(root);
+  //draw(root.descendants()[2]);
+
+  function update(source) {
+      const duration = d3.event && d3.event.altKey ? 2500 : 250;
+      const nodes = root.descendants().reverse();
+      const links = root.links();
+
+      root = tree(root);
+
+      const link = gLink.selectAll("path")
+        .data(links, d => d.target.id)
+
+      const linkEnter = link.enter().append("path")
+        .attr("class", d => `level-${d.source.depth}`)
+        .attr("transform", d => `
+          translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+        `)
+        .attr("d", d3.linkRadial()
+          .angle(d => source.x)
+          .radius(d => source.y));
+
+      link.merge(linkEnter).transition()
+        .duration(duration)
+        .attr("transform", d => `
+          translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+        `)
+        .attr("d", d3.linkRadial()
+          .angle(d => d.x)
+          .radius(d => d.y));
+
+      link.exit().transition()
+        .duration(duration)
+        .remove()
+        .attr("transform", d => `
+          translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+        `)
+        .attr("d", d3.linkRadial()
+          .angle(d => source.x)
+          .radius(d => source.y));
+
+
+      const node = gNode.selectAll("g")
+        .data(nodes, d => d.id);
+
+      const nodeEnter = node.enter().append("g")
+        .attr("class", d => `level-${d.depth}`)
+        .attr("transform", d => `
+          translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+          rotate(${d.x * 180 / Math.PI - 90})
+          translate(${source.y0}, ${source.x0})
+        `)
+        .attr("fill-opacity", 0)
+        .attr("stroke-opacity", 0)
+        .on("click", (d) => {
+          if (!d.depth) {
+            update(d);
+            return;
+          }
+
+          if (!d.children) {
+              d.children = d._children;
+              d._children = null;
+          } else
+              collapse(d);
+          update(d);
+        })
+        .on("mouseover", mouseover)
+        .on("mousemove", mousemove)
+        .on("mouseleave", mouseleave)
+
+      nodeEnter.append("circle")
+        .attr("r", 2.5)
+        .attr("fill", d => d._children ? "#555" : "#999")
+        .attr("stroke-width", 10);
+
+      nodeEnter.append("text")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 10)
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-width", 3)
+        .attr("dy", "0.31em")
+//        .attr("x", d => d._children ? -6 : 6)
+//        .attr("text-anchor", d => d._children ? "end" : "start")
+        .attr("text-anchor", d => d.x < Math.PI === !d.children ? "end" : "start")
+        .attr("x", d => d.x < Math.PI === !d.children ? -6 : 6)
+        .text(d => d.data.name)
+        .clone(true).lower()
+        .attr("stroke", "white")
+
+      const nodeUpdate = node.merge(nodeEnter).transition()
+        .duration(duration)
+        .attr("transform", d => `
+          translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+          rotate(${d.x * 180 / Math.PI - 90})
+          translate(${d.y}, 0)
+          rotate(${d.x >= Math.PI ? 180 : 0})
+        `)
+        .attr("fill-opacity", 1)
+        .attr("stroke-opacity", 1)
+
+      const nodeExit = node.exit().transition()
+        .duration(duration)
+        .remove()
+        .attr("transform", d => `
+          translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+          rotate(${d.x * 180 / Math.PI - 90})
+          translate(${source.y}, ${source.x})
+        `)
+        .attr("fill-opacity", 0)
+        .attr("stroke-opacity", 0);
+
+      root.eachBefore(d => {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+
+
+      pairSharingDomains.forEach(pairLink => {
+        pairLink.remove();
+      });
+      pairSharingDomains = []
+
+      pairSharingCookies.forEach(link => {
+        link.remove();
+      });
+      pairSharingCookies = []
+
+
+      const domains1 = root['children'][0].descendants().filter(d => d.depth === 2);
+      const domains2 = root['children'][1].descendants().filter(d => d.depth === 2);
+      let pairs = []
+      domains1.forEach(d1 => {
+        domains2.forEach(d2 => {
+          if (d1.data['name'] == d2.data['name'])
+            pairs.push({source: d1, target: d2});
+        });
+      });
+
+
+      pairs.forEach(pair => {
+        const p = gLinkForCommonDomain.append("path")
+          .attr("transform", d => `
+            translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+          `)
+          .attr('d', d3.linkRadial()
+            .source(d => pair.source)
+            .target(d => pair.target)
+            .angle(d => d.x0)
+            .radius(d => d.y0))
+
+          pairSharingDomains.push(p);
+        });
+
+//      const linkRadial = d3.linkRadial()
+//        .angle(d => d.x)
+//        .radius(d => d.y)
+//
+//      gLinkForCommonDomain.selectAll(null)
+//        .data(pairs)
+//        .enter().append('path')
+//        .attr("transform", d => `
+//          translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+//        `)
+//        .attr('d', linkRadial)
+
+
+      pairs = []
+      domains1.forEach(d1 => {
+        d1.data['children'].forEach(subdomain1 => {
+          subdomain1['children'].forEach(path1 => {
+            path1['children'].forEach(http1 => {
+              http1['children'][0]['cookies'].forEach(cookie1 => {
+                domains2.forEach(d2 => {
+                  d2.data['children'].forEach(subdomain2 => {
+                    subdomain2['children'].forEach(path2 => {
+                      path2['children'].forEach(http2 => {
+                        http2['children'][0]['cookies'].forEach(cookie2 =>  {
+                          cookieName1 = cookie1['name'].toLowerCase()
+                          cookieName2 = cookie2['name'].toLowerCase()
+                          cookieValue1 = cookie1['value'].toLowerCase()
+                          cookieValue2 = cookie2['value'].toLowerCase()
+                          //console.log(path2)
+                          if ((cookieName1 === cookieName2
+                              || (cookieName1.includes('id') && cookieName2.includes('id')))
+                            && cookieValue1 === cookieValue2) {
+                            pairs.push({source: d1, target: d2});
+                          }
+//                          else if (path2.value.toLowerCase().includes(cookieValue1)
+//                            || path1.value.toLowerCase().includes(cookieValue2)) {
+//                            console.log(path2.value, cookieValue1, path1.value, cookieValue2)
+//                            pairs.push({source: d1, target: d2});
+//                          }
+                        })
+                      })
+                    })
+                  })
+                })
+              })
+            })
+          })
+        })
+      });
+
+      pairs = pairs.filter((pair, index, self) =>
+        index === self.findIndex((t) => (
+          t.source.data.name === pair.source.data.name
+            && t.target.data.name === pair.target.data.name
+        ))
+      )
+
+      pairs.forEach(pair => {
+        const p = gPairLinkSharingCookies.append("path")
+          .attr("transform", d => `
+            translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+          `)
+          .attr('d', d3.linkRadial()
+            .source(d => pair.source)
+            .target(d => pair.target)
+            .angle(d => d.x0)
+            .radius(d => d.y0))
+
+          pairSharingCookies.push(p);
+        });
+    }
+
+    function draw(root) {
+      root = tree(root);
+      svg.append("g")
+        .selectAll("circle")
+        .data(root.descendants())
+        .enter().append("circle")
+        .attr("transform", d => `
+          translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+          rotate(${d.x * 180 / Math.PI - 90})
+          translate(${d.y},0)
+        `)
+        .attr("fill", d => d.children ? "#555" : "#999")
+        .attr("r", 2.5);
+
+      svg.append("g")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 10)
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-width", 3)
+        .selectAll("text")
+        .data(root.descendants())
+        .enter().append("text")
+        .attr("transform", d => `
+          translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+          rotate(${d.x * 180 / Math.PI - 90})
+          translate(${d.y},0)
+          rotate(${d.x >= Math.PI ? 180 : 0})
+        `)
+        .attr("dy", "0.31em")
+        .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
+        .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
+        .text(d => d.data.name)
+        .clone(true).lower()
+        .attr("stroke", "white");
+
+      svg.append("g")
+        .attr("fill", "none")
+        .attr("stroke", "#555")
+        .attr("stroke-opacity", 0.4)
+        .attr("stroke-width", 1.5)
+        .selectAll("path")
+        .data(root.links())
+        .enter().append("path")
+        .attr("transform", d => `
+          translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+        `)
+        .attr("d", d3.linkRadial()
+        .angle(d => d.x)
+        .radius(d => d.y));
+    }
+
+    function collapse(d) {
+      if(d.children) {
+        d._children = d.children
+        d._children.forEach(collapse)
+        d.children = null
+      }
+    }
+});
+
+</script>
+</html>
