@@ -29,7 +29,7 @@ g > text {
 
 .cookie-syncing-third-parties {
   fill: none;
-  stroke: yellow;
+  stroke: #E6E600;
   stroke-width: 1px;
 }
 
@@ -69,7 +69,7 @@ g > text {
     <input type="checkbox" id="checkboxSameCookie"><span style='background-color:red'>Same Cookie param</span></input><br>
     <input type="checkbox" id="checkboxSameDomainCookie"><span style='background-color:lime'>Same Domain &amp; Same Cookie param</span></input><br>
     <input type="checkbox" id="checkboxSameCookieInURL"><span style='background-color:magenta'>Same Cookie param in URL</span></input><br>
-    <input type="checkbox" id="checkboxCookieSync"><span style='background-color:yellow'>Same Cookie Param in URL for the same website</span></input><br>
+    <input type="checkbox" id="checkboxCookieSync"><span style='background-color:#E6E600'>Same Cookie Param in URL for the same website</span></input><br>
     <button id="downloadButton">Download</button>
   </div>
 </body>
@@ -400,7 +400,7 @@ d3.json("data.json", function(error, data) {
                           const cookieValue1 = cookie1['value'].toLowerCase()
                           const cookieValue2 = cookie2['value'].toLowerCase()
 
-                          if (http1['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue2)) {
+                          if (http1['children'][0]['queries'].some(q => q['name'].includes('id') && cookieName2.includes('id') && q['value'] === cookieValue2)) {
                             reason.push({
                               cookies: [{name: cookie2['name'], value: cookie2['value']}],
                               queries: http1['children'][0]['queries'],
@@ -408,7 +408,7 @@ d3.json("data.json", function(error, data) {
                             result = true;
                           }
 
-                          if (http2['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue1)) {
+                          if (http2['children'][0]['queries'].some(q => q['name'].includes('id') && cookieName1.includes('id') && q['value'] === cookieValue1)) {
                             reason.push({
                               cookies: [{name: cookie1['name'], value: cookie1['value']}],
                               queries: http2['children'][0]['queries'],
@@ -450,7 +450,7 @@ d3.json("data.json", function(error, data) {
                           const cookieValue1 = cookie1['value'].toLowerCase()
                           const cookieValue2 = cookie2['value'].toLowerCase()
 
-                          if (http1['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue2)) {
+                          if (http1['children'][0]['queries'].some(q => q['name'].includes('id') && cookieName2.includes('id') && q['value'] === cookieValue2)) {
                             reason.push({
                               cookies: [{name: cookie2['name'], value: cookie2['value']}],
                               queries: http1['children'][0]['queries'],
@@ -458,7 +458,7 @@ d3.json("data.json", function(error, data) {
                             result = true;
                           }
 
-                          if (http2['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue1)) {
+                          if (http2['children'][0]['queries'].some(q => q['name'].includes('id') && cookieName1.includes('id') && q['value'] === cookieValue1)) {
                             reason.push({
                               cookies: [{name: cookie1['name'], value: cookie1['value']}],
                               queries: http2['children'][0]['queries'],
@@ -530,7 +530,7 @@ d3.json("data.json", function(error, data) {
                             const cookieValue1 = cookie1['value'].toLowerCase()
                             const cookieValue2 = cookie2['value'].toLowerCase()
 
-                            if (http1['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue2)) {
+                            if (http1['children'][0]['queries'].some(q => q['name'].includes('id') && cookieName2.includes('id') && q['value'] === cookieValue2)) {
                               reason.push({
                                 cookies: [{name: cookie2['name'], value: cookie2['value']}],
                                 queries: http1['children'][0]['queries'],
@@ -538,7 +538,7 @@ d3.json("data.json", function(error, data) {
                               result = true;
                             }
 
-                            if (http2['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue1)) {
+                            if (http2['children'][0]['queries'].some(q => q['name'].includes('id') && cookieName1.includes('id') && q['value'] === cookieValue1)) {
                               reason.push({
                                 cookies: [{name: cookie1['name'], value: cookie1['value']}],
                                 queries: http2['children'][0]['queries'],
