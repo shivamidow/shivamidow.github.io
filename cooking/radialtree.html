@@ -27,9 +27,21 @@ g > text {
   opacity: 0;
 }
 
+.cookie-syncing-third-parties {
+  fill: none;
+  stroke: yellow;
+  stroke-width: 1px;
+}
+
 .common-third-parties {
   fill: none;
   stroke: blue;
+  stroke-width: 1px;
+}
+
+.common-third-parties-sharing-cookies {
+  fill: none;
+  stroke: lime;
   stroke-width: 1px;
 }
 
@@ -45,15 +57,21 @@ g > text {
   stroke-width: 1px;
 }
 
-.common-third-parties-sharing-cookies {
-  fill: none;
-  stroke: lime;
-  stroke-width: 1px;
+.toolbox {
+  position: absolute;
 }
 </style>
 </head>
 <body>
   <div id='tooltip_container'></div>
+  <div id='toolbox_container' class='toolbox'>
+    <input type="checkbox" id="checkboxSameDomain"><span style='background-color:blue'>Same domain</span></input><br>
+    <input type="checkbox" id="checkboxSameCookie"><span style='background-color:red'>Same Cookie param</span></input><br>
+    <input type="checkbox" id="checkboxSameDomainCookie"><span style='background-color:lime'>Same Domain &amp; Same Cookie param</span></input><br>
+    <input type="checkbox" id="checkboxSameCookieInURL"><span style='background-color:magenta'>Same Cookie param in URL</span></input><br>
+    <input type="checkbox" id="checkboxCookieSync"><span style='background-color:yellow'>Same Cookie Param in URL for the same website</span></input><br>
+    <button id="downloadButton">Download</button>
+  </div>
 </body>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script>
@@ -129,17 +147,20 @@ d3.json("data.json", function(error, data) {
     .attr("stroke-opacity", 0.4)
     .attr("stroke-width", 1.5);
 
-  const gLinkForCommonDomain = svg.append('g')
+  const gCrossLinkForSameDomain = svg.append('g')
     .attr('class', 'common-third-parties')
 
-  const gPairLinkSharingCookies = svg.append('g')
+  const gCrossLinkForSameCookie = svg.append('g')
     .attr('class', 'third-parties-sharing-cookies')
 
-  const gPairLinkSharingCookiesViaURL = svg.append('g')
+  const gCrossLinkForSameCookieInURL = svg.append('g')
     .attr('class', 'third-parties-sharing-cookies-via-url')
 
-  const gLinkForCommonDomainSharingCookies = svg.append('g')
+  const gCrossLinkForSameDomainCookie = svg.append('g')
     .attr('class', 'common-third-parties-sharing-cookies')
+
+  const gLinkForSameCookieInURL = svg.append('g')
+    .attr('class', 'cookie-syncing-third-parties')
 
   var root = d3.hierarchy(data)
     .sort((a, b) => d3.ascending(a.data.name, b.data.name));
@@ -153,10 +174,51 @@ d3.json("data.json", function(error, data) {
   root.x0 = 0;
   root.y0 = 0;
 
-  var pairSharingDomains = [];
-  var pairSharingCookies = [];
-  var pairSharingCookiesViaURL = [];
-  var pairsSharingDomainAndCookie = [];
+  var sourceNode = root;
+  var crossLinksSharingDomain = [];
+  var crossLinksSharingCookie = [];
+  var crossLinksSharingCookieInURL = [];
+  var crossLinksSharingDomainAndCookie = [];
+
+  var crossPairsForSameDomain = [];
+  var crossPairsForSameCookie = [];
+  var crossPairsForSameCookieInURL = [];
+  var crossPairsForSameDomainCookie = [];
+  var crossPairsForSameCookieDifferentDomain = [];
+  var crossPairsForSameDomainDifferentCookie = [];
+
+  // To show Cookie Sync
+  var aLinksSharingCookieInURL = [];
+  var bLinksSharingCookieInURL = [];
+
+  var aPairsForSameCookieInURL = [];
+  var bPairsForSameCookieInURL = [];
+
+
+  d3.select("#checkboxSameDomain")
+    .on("change", () => {
+      update(sourceNode);
+    });
+  d3.select("#checkboxSameCookie")
+    .on("change", () => {
+      update(sourceNode);
+    });
+  d3.select("#checkboxSameDomainCookie")
+    .on("change", () => {
+      update(sourceNode);
+    });
+  d3.select("#checkboxSameCookieInURL")
+    .on("change", () => {
+      update(sourceNode);
+    });
+  d3.select("#checkboxCookieSync")
+    .on("change", () => {
+      update(sourceNode);
+    });
+  d3.select("#downloadButton")
+    .on("click", () => {
+      download();
+    });
 
   update(root);
   //draw(root.descendants()[2]);
@@ -168,7 +230,7 @@ d3.json("data.json", function(error, data) {
 
       root = tree(root);
 
-
+      /* Link update */
       const link = gLink.selectAll("path")
         .data(links, d => d.target.id)
 
@@ -201,6 +263,7 @@ d3.json("data.json", function(error, data) {
           .radius(d => source.y));
 
 
+      /* Node update */
       const node = gNode.selectAll("g")
         .data(nodes, d => d.id);
 
@@ -216,6 +279,7 @@ d3.json("data.json", function(error, data) {
         .attr("stroke-opacity", 0)
         .on("click", (d) => {
           if (!d.depth) {
+            source = d;
             update(d);
             return;
           }
@@ -225,6 +289,8 @@ d3.json("data.json", function(error, data) {
               d._children = null;
           } else
               collapse(d);
+
+          source = d;
           update(d);
         })
         .on("mouseover", mouseover)
@@ -279,91 +345,210 @@ d3.json("data.json", function(error, data) {
       });
 
 
-      pairSharingDomains.forEach(pairLink => {
-        pairLink.remove();
+      crossLinksSharingDomain.forEach(pair => {
+        pair.remove();
       });
-      pairSharingDomains = []
+      crossLinksSharingDomain = []
 
-      pairSharingCookies.forEach(link => {
-        link.remove();
+      crossLinksSharingCookie.forEach(pair => {
+        pair.remove();
       });
-      pairSharingCookies = []
+      crossLinksSharingCookie = []
 
-      pairSharingCookiesViaURL.forEach(link => {
-        link.remove();
+      crossLinksSharingCookieInURL.forEach(pair => {
+        pair.remove();
       });
-      pairSharingCookiesViaURL = []
+      crossLinksSharingCookieInURL = []
 
-      pairsSharingDomainAndCookie.forEach(link => {
-        link.remove();
+      crossLinksSharingDomainAndCookie.forEach(pair => {
+        pair.remove();
       });
-      pairsSharingDomainAndCookie = []
+      crossLinksSharingDomainAndCookie = []
+
+      aLinksSharingCookieInURL.forEach(pair => {
+        pair.remove();
+      });
+      aLinksSharingCookieInURL = []
+
+      bLinksSharingCookieInURL.forEach(pair => {
+        pair.remove();
+      });
+      bLinksSharingCookieInURL = []
 
 
+      const domainNodesSetA = root['children'][0].descendants().filter(d => d.depth === 2);
+      const domainNodesSetB = root['children'][1].descendants().filter(d => d.depth === 2);
 
-      const domains1 = root['children'][0].descendants().filter(d => d.depth === 2);
-      const domains2 = root['children'][1].descendants().filter(d => d.depth === 2);
-      let pairsForCommonDomain = []
-      domains1.forEach(d1 => {
-        domains2.forEach(d2 => {
-          if (d1.data['name'] == d2.data['name'])
-            pairsForCommonDomain.push({source: d1, target: d2});
+      // Cookie syncing pairs for domain set A
+      for (let i = 0; i < domainNodesSetA.length - 1; ++i) {
+        const domainNode1 = domainNodesSetA[i];
+        for (let j = i + 1; j < domainNodesSetA.length; ++j) {
+          const domainNode2 = domainNodesSetA[j];
+
+          domainNode1.data['children'].forEach(subdomain1 => {
+            subdomain1['children'].forEach(path1 => {
+              path1['children'].forEach(http1 => {
+                http1['children'][0]['cookies'].forEach(cookie1 => {
+                  domainNode2.data['children'].forEach(subdomain2 => {
+                    subdomain2['children'].forEach(path2 => {
+                      path2['children'].forEach(http2 => {
+                        let reason = [];
+                        let result = false;
+                        http2['children'][0]['cookies'].forEach(cookie2 => {
+                          const cookieName1 = cookie1['name'].toLowerCase()
+                          const cookieName2 = cookie2['name'].toLowerCase()
+                          const cookieValue1 = cookie1['value'].toLowerCase()
+                          const cookieValue2 = cookie2['value'].toLowerCase()
+
+                          if (http1['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue2)) {
+                            reason.push({
+                              cookies: [{name: cookie2['name'], value: cookie2['value']}],
+                              queries: http1['children'][0]['queries'],
+                            });
+                            result = true;
+                          }
+
+                          if (http2['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue1)) {
+                            reason.push({
+                              cookies: [{name: cookie1['name'], value: cookie1['value']}],
+                              queries: http2['children'][0]['queries'],
+                            });
+                            result = true;
+                          }
+                        })
+
+                        if (result)
+                          aPairsForSameCookieInURL.push({source: domainNode1, target: domainNode2, reason: reason});
+                      })
+                    })
+                  })
+                })
+              })
+            })
+          })
+        }
+      }
+
+      // Cookie syncing pairs for domain set B
+      for (let i = 0; i < domainNodesSetB.length - 1; ++i) {
+        const domainNode1 = domainNodesSetB[i];
+        for (let j = i + 1; j < domainNodesSetB.length; ++j) {
+          const domainNode2 = domainNodesSetB[j];
+
+          domainNode1.data['children'].forEach(subdomain1 => {
+            subdomain1['children'].forEach(path1 => {
+              path1['children'].forEach(http1 => {
+                http1['children'][0]['cookies'].forEach(cookie1 => {
+                  domainNode2.data['children'].forEach(subdomain2 => {
+                    subdomain2['children'].forEach(path2 => {
+                      path2['children'].forEach(http2 => {
+                        let reason = [];
+                        let result = false;
+                        http2['children'][0]['cookies'].forEach(cookie2 => {
+                          const cookieName1 = cookie1['name'].toLowerCase()
+                          const cookieName2 = cookie2['name'].toLowerCase()
+                          const cookieValue1 = cookie1['value'].toLowerCase()
+                          const cookieValue2 = cookie2['value'].toLowerCase()
+
+                          if (http1['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue2)) {
+                            reason.push({
+                              cookies: [{name: cookie2['name'], value: cookie2['value']}],
+                              queries: http1['children'][0]['queries'],
+                            });
+                            result = true;
+                          }
+
+                          if (http2['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue1)) {
+                            reason.push({
+                              cookies: [{name: cookie1['name'], value: cookie1['value']}],
+                              queries: http2['children'][0]['queries'],
+                            });
+                            result = true;
+                          }
+
+                        })
+
+                        if (result)
+                          bPairsForSameCookieInURL.push({source: domainNode1, target: domainNode2, reason: reason});
+                      })
+                    })
+                  })
+                })
+              })
+            })
+          })
+        }
+      }
+
+      crossPairsForSameDomain = []
+      domainNodesSetA.forEach(nodeA => {
+        domainNodesSetB.forEach(nodeB => {
+          let reason = [];
+          if (nodeA.data['name'] == nodeB.data['name']) {
+            reason.push(nodeA.data['name'])
+            crossPairsForSameDomain.push({source: nodeA, target: nodeB, reason: reason});
+          }
         });
       });
 
 
-//      const linkRadial = d3.linkRadial()
-//        .angle(d => d.x)
-//        .radius(d => d.y)
-//
-//      gLinkForCommonDomain.selectAll(null)
-//        .data(pairs)
-//        .enter().append('path')
-//        .attr("transform", d => `
-//          translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
-//        `)
-//        .attr('d', linkRadial)
-
-
-      let pairs = []
-      let pairsViaURL = []
-      domains1.forEach(d1 => {
+      crossPairsForSameCookie = []
+      crossPairsForSameCookieInURL = []
+      domainNodesSetA.forEach(d1 => {
         d1.data['children'].forEach(subdomain1 => {
           subdomain1['children'].forEach(path1 => {
             path1['children'].forEach(http1 => {
               http1['children'][0]['cookies'].forEach(cookie1 => {
-                domains2.forEach(d2 => {
+                domainNodesSetB.forEach(d2 => {
                   d2.data['children'].forEach(subdomain2 => {
                     subdomain2['children'].forEach(path2 => {
                       path2['children'].forEach(http2 => {
-                          let result = http2['children'][0]['cookies'].some(cookie2 => {
+                          let reason = [];
+                          let result = false;
+                          http2['children'][0]['cookies'].forEach(cookie2 => {
                             const cookieName1 = cookie1['name'].toLowerCase()
                             const cookieName2 = cookie2['name'].toLowerCase()
                             const cookieValue1 = cookie1['value'].toLowerCase()
                             const cookieValue2 = cookie2['value'].toLowerCase()
                             if ((cookieName1 === cookieName2
                                 || (cookieName1.includes('id') && cookieName2.includes('id')))
-                              && cookieValue1 === cookieValue2)
-                              return true;
-                            return false;
+                                && cookieValue1 === cookieValue2) {
+                              reason.push({
+                                cookies: [{name: cookie1['name'], value: cookie1['value']}, {name: cookie2['name'], value: cookie2['value']}]
+                              });
+                              result = true;
+                            }
                           })
                           if (result)
-                            pairs.push({source: d1, target: d2});
+                            crossPairsForSameCookie.push({source: d1, target: d2, reason: reason});
 
-                          result = http2['children'][0]['cookies'].some(cookie2 => {
+                          reason = [];
+                          result = false;
+                          http2['children'][0]['cookies'].forEach(cookie2 => {
                             const cookieName1 = cookie1['name'].toLowerCase()
                             const cookieName2 = cookie2['name'].toLowerCase()
                             const cookieValue1 = cookie1['value'].toLowerCase()
                             const cookieValue2 = cookie2['value'].toLowerCase()
-//                            if (http1['children'][0]['queries'].some(q => q['name'] === cookieName2 && q['value'] === cookieValue2)
-//                              || http2['children'][0]['queries'].some(q => q['name'] === cookieName1 && q['value'] === cookieValue1))
-                            if (http1['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue2)
-                              || http2['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue1))
-                              return true;
-                            return false;
+
+                            if (http1['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue2)) {
+                              reason.push({
+                                cookies: [{name: cookie2['name'], value: cookie2['value']}],
+                                queries: http1['children'][0]['queries'],
+                              });
+                              result = true;
+                            }
+
+                            if (http2['children'][0]['queries'].some(q => q['name'].includes('id') && q['value'] === cookieValue1)) {
+                              reason.push({
+                                cookies: [{name: cookie1['name'], value: cookie1['value']}],
+                                queries: http2['children'][0]['queries'],
+                              });
+                              result = true;
+                            }
                           })
+
                           if (result)
-                            pairsViaURL.push({source: d1, target: d2});
+                            crossPairsForSameCookieInURL.push({source: d1, target: d2, reason: reason});
                       })
                     })
                   })
@@ -374,92 +559,171 @@ d3.json("data.json", function(error, data) {
         })
       });
 
-      pairs = pairs.filter((pair, index, self) =>
+      crossPairsForSameCookie = crossPairsForSameCookie.filter((pair, index, self) =>
         index === self.findIndex((t) => (
           t.source.data.name === pair.source.data.name
             && t.target.data.name === pair.target.data.name
         ))
       )
 
-      pairsViaURL = pairsViaURL.filter((pair, index, self) =>
+      crossPairsForSameCookieInURL = crossPairsForSameCookieInURL.filter((pair, index, self) =>
         index === self.findIndex((t) => (
           t.source.data.name === pair.source.data.name
             && t.target.data.name === pair.target.data.name
         ))
       )
 
-      const pairsForCommonDomainAndCookie = pairs.filter(pair => pair.source.data.name === pair.target.data.name)
-      console.log('Cookie and doamin share', pairsForCommonDomainAndCookie.length);
+      aPairsForSameCookieInURL = aPairsForSameCookieInURL.filter((pair, index, self) =>
+        index === self.findIndex((t) => (
+          t.source.data.name === pair.source.data.name
+            && t.target.data.name === pair.target.data.name
+        ))
+      )
 
-      const pairsForCommonCookie = pairs.filter(pair => pair.source.data.name !== pair.target.data.name)
-      console.log('Cookie share only:', pairsForCommonCookie.length);
+      bPairsForSameCookieInURL = bPairsForSameCookieInURL.filter((pair, index, self) =>
+        index === self.findIndex((t) => (
+          t.source.data.name === pair.source.data.name
+            && t.target.data.name === pair.target.data.name
+        ))
+      )
 
-      pairsForCommonDomain = pairsForCommonDomain.filter(pair1 => {
-          return !pairsForCommonDomainAndCookie.some(pair2 => pair2.source.data.name === pair1.source.data.name && pair2.target.data.name === pair1.target.data.name);
+      crossPairsForSameDomainCookie = crossPairsForSameCookie.filter(pair => pair.source.data.name === pair.target.data.name)
+      crossPairsForSameCookieDifferentDomain = crossPairsForSameCookie.filter(pair => pair.source.data.name !== pair.target.data.name)
+      crossPairsForSameDomainDifferentCookie = crossPairsForSameDomain.filter(pair1 => {
+          return !crossPairsForSameDomainCookie.some(pair2 => pair2.source.data.name === pair1.source.data.name && pair2.target.data.name === pair1.target.data.name);
       });
-      console.log('Domain share only:', pairsForCommonDomain.length);
 
-      pairsViaURL = pairsViaURL.filter(pair1 => {
-          return !pairs.some(pair2 => pair2.source.data.name === pair1.source.data.name && pair2.target.data.name === pair1.target.data.name);
-      })
-      console.log('Cookie share via URL', pairsViaURL.length);
+      const sameDomainChecked = d3.select("#checkboxSameDomain").property("checked");
+      const sameCookieChecked = d3.select("#checkboxSameCookie").property("checked");
+      const sameDomainCookieChecked = d3.select("#checkboxSameDomainCookie").property("checked");
+      const sameCookieInURLChecked = d3.select("#checkboxSameCookieInURL").property("checked");
+      const cookieSyncChecked = d3.select("#checkboxCookieSync").property("checked");
 
+      if (sameDomainCookieChecked || (sameDomainChecked && sameCookieChecked)) {
+        crossPairsForSameDomainCookie.forEach(pair => {
+          const p = gCrossLinkForSameDomainCookie.append("path")
+            .attr("transform", d => `
+              translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+            `)
+            .attr('d', d3.linkRadial()
+              .source(d => pair.source)
+              .target(d => pair.target)
+              .angle(d => d.x0)
+              .radius(d => d.y0))
 
-      pairsForCommonDomain.forEach(pair => {
-        const p = gLinkForCommonDomain.append("path")
-          .attr("transform", d => `
-            translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
-          `)
-          .attr('d', d3.linkRadial()
-            .source(d => pair.source)
-            .target(d => pair.target)
-            .angle(d => d.x0)
-            .radius(d => d.y0))
-
-          pairSharingDomains.push(p);
+          crossLinksSharingDomainAndCookie.push(p);
         });
 
-      pairsViaURL.forEach(pair => {
-        const p = gPairLinkSharingCookiesViaURL.append("path")
-          .attr("transform", d => `
-            translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
-          `)
-          .attr('d', d3.linkRadial()
-            .source(d => pair.source)
-            .target(d => pair.target)
-            .angle(d => d.x0)
-            .radius(d => d.y0))
+        if (sameDomainChecked) {
+          crossPairsForSameDomainDifferentCookie.forEach(pair => {
+            const p = gCrossLinkForSameDomain.append("path")
+              .attr("transform", d => `
+                translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+              `)
+              .attr('d', d3.linkRadial()
+                .source(d => pair.source)
+                .target(d => pair.target)
+                .angle(d => d.x0)
+                .radius(d => d.y0))
 
-          pairSharingCookiesViaURL.push(p);
+            crossLinksSharingDomain.push(p);
+          });
+        }
+
+        if (sameCookieChecked) {
+          crossPairsForSameCookieDifferentDomain.forEach(pair => {
+            const p = gCrossLinkForSameCookie.append("path")
+              .attr("transform", d => `
+                translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+              `)
+              .attr('d', d3.linkRadial()
+                .source(d => pair.source)
+                .target(d => pair.target)
+                .angle(d => d.x0)
+                .radius(d => d.y0))
+
+            crossLinksSharingCookie.push(p);
+          });
+        }
+      } else {
+        if (sameDomainChecked) {
+          crossPairsForSameDomain.forEach(pair => {
+            const p = gCrossLinkForSameDomain.append("path")
+              .attr("transform", d => `
+                translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+              `)
+              .attr('d', d3.linkRadial()
+                .source(d => pair.source)
+                .target(d => pair.target)
+                .angle(d => d.x0)
+                .radius(d => d.y0))
+
+            crossLinksSharingDomain.push(p);
+          });
+        }
+
+        if (sameCookieChecked) {
+          crossPairsForSameCookie.forEach(pair => {
+            const p = gCrossLinkForSameCookie.append("path")
+              .attr("transform", d => `
+                translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+              `)
+              .attr('d', d3.linkRadial()
+                .source(d => pair.source)
+                .target(d => pair.target)
+                .angle(d => d.x0)
+                .radius(d => d.y0))
+
+            crossLinksSharingCookie.push(p);
+          });
+        }
+      }
+
+      if (sameCookieInURLChecked) {
+        crossPairsForSameCookieInURL.forEach(pair => {
+          const p = gCrossLinkForSameCookieInURL.append("path")
+            .attr("transform", d => `
+              translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+            `)
+            .attr('d', d3.linkRadial()
+              .source(d => pair.source)
+              .target(d => pair.target)
+              .angle(d => d.x0)
+              .radius(d => d.y0))
+
+          crossLinksSharingCookieInURL.push(p);
+        });
+      }
+
+      if (cookieSyncChecked) {
+        aPairsForSameCookieInURL.forEach(pair => {
+          const p = gLinkForSameCookieInURL.append("path")
+            .attr("transform", d => `
+              translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+            `)
+            .attr('d', d3.linkRadial()
+              .source(d => pair.source)
+              .target(d => pair.target)
+              .angle(d => d.x0)
+              .radius(d => d.y0))
+
+          aLinksSharingCookieInURL.push(p);
         });
 
-      pairsForCommonCookie.forEach(pair => {
-        const p = gPairLinkSharingCookies.append("path")
-          .attr("transform", d => `
-            translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
-          `)
-          .attr('d', d3.linkRadial()
-            .source(d => pair.source)
-            .target(d => pair.target)
-            .angle(d => d.x0)
-            .radius(d => d.y0))
+        bPairsForSameCookieInURL.forEach(pair => {
+          const p = gLinkForSameCookieInURL.append("path")
+            .attr("transform", d => `
+              translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
+            `)
+            .attr('d', d3.linkRadial()
+              .source(d => pair.source)
+              .target(d => pair.target)
+              .angle(d => d.x0)
+              .radius(d => d.y0))
 
-          pairSharingCookies.push(p);
+          bLinksSharingCookieInURL.push(p);
         });
-
-      pairsForCommonDomainAndCookie.forEach(pair => {
-        const p = gLinkForCommonDomainSharingCookies.append("path")
-          .attr("transform", d => `
-            translate(${window.innerWidth / 2}, ${window.innerHeight / 2})
-          `)
-          .attr('d', d3.linkRadial()
-            .source(d => pair.source)
-            .target(d => pair.target)
-            .angle(d => d.x0)
-            .radius(d => d.y0))
-
-          pairsSharingDomainAndCookie.push(p);
-        });
+      }
     }
 
     function draw(root) {
@@ -519,6 +783,111 @@ d3.json("data.json", function(error, data) {
         d._children.forEach(collapse)
         d.children = null
       }
+    }
+
+    function download() {
+      let jsonData = {};
+
+      const sameDomainChecked = d3.select("#checkboxSameDomain").property("checked");
+      const sameCookieChecked = d3.select("#checkboxSameCookie").property("checked");
+      const sameDomainCookieChecked = d3.select("#checkboxSameDomainCookie").property("checked");
+      const sameCookieInURLChecked = d3.select("#checkboxSameCookieInURL").property("checked");
+      const cookieSyncChecked = d3.select("#checkboxCookieSync").property("checked");
+
+      if (sameDomainCookieChecked || (sameDomainChecked && sameCookieChecked)) {
+        jsonData['same-domain-cookie'] = [];
+        crossPairsForSameDomainCookie.forEach(pair => {
+          jsonData['same-domain-cookie'].push({
+            reason: pair.reason,
+            nodeA: pair.source.data,
+            nodeB: pair.target.data,
+          })
+        });
+
+        if (sameDomainChecked) {
+          jsonData['same-domain-different-cookie'] = [];
+          crossPairsForSameDomainDifferentCookie.forEach(pair => {
+            jsonData['same-domain-different-cookie'].push({
+              reason: pair.reason,
+              nodeA: pair.source.data,
+              nodeB: pair.target.data,
+            })
+          });
+        }
+
+        if (sameCookieChecked) {
+          jsonData['same-cookie-different-domain'] = [];
+          crossPairsForSameCookieDifferentDomain.forEach(pair => {
+            jsonData['same-cookie-different-domain'].push({
+              reason: pair.reason,
+              nodeA: pair.source.data,
+              nodeB: pair.target.data,
+            })
+          });
+        }
+      } else {
+        if (sameDomainChecked) {
+          jsonData['same-domain'] = [];
+          crossPairsForSameDomain.forEach(pair => {
+            jsonData['same-domain'].push({
+              reason: pair.reason,
+              nodeA: pair.source.data,
+              nodeB: pair.target.data,
+            })
+          });
+        }
+
+        if (sameCookieChecked) {
+          jsonData['same-cookie'] = [];
+          crossPairsForSameCookie.forEach(pair => {
+            jsonData['same-cookie'].push({
+              reason: pair.reason,
+              nodeA: pair.source.data,
+              nodeB: pair.target.data,
+            })
+          });
+        }
+      }
+
+      if (sameCookieInURLChecked) {
+        jsonData['same-cookie-in-url'] = [];
+        crossPairsForSameCookieInURL.forEach(pair => {
+          jsonData['same-cookie-in-url'].push({
+            reason: pair.reason,
+            nodeA: pair.source.data,
+            nodeB: pair.target.data,
+          })
+        });
+      }
+
+      if (cookieSyncChecked) {
+        jsonData['cookie-sync'] = [];
+        aPairsForSameCookieInURL.forEach(pair => {
+          jsonData['cookie-sync'].push({
+            reason: pair.reason,
+            nodeA: pair.source.data,
+            nodeB: pair.target.data,
+          })
+        });
+        bPairsForSameCookieInURL.forEach(pair => {
+          jsonData['cookie-sync'].push({
+            reason: pair.reason,
+            nodeA: pair.source.data,
+            nodeB: pair.target.data,
+          })
+        });
+      }
+
+      if (Object.keys(jsonData).length === 0 && jsonData.constructor === Object)
+        return;
+
+      const aElement = document.createElement("a");
+      const file = new Blob([JSON.stringify(jsonData, null, 2)], {type: 'text/plain'});
+      aElement.href = URL.createObjectURL(file);
+      aElement.download = `radialtree.json`;
+      document.body.appendChild(aElement); // Necessary for Firefox
+      aElement.click();
+      document.body.removeChild(aElement);
     }
 });
 
