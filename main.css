@@ -21,11 +21,17 @@ body {
   max-width: 800px;
   margin: auto;
 }
-img {
+
+img.profile {
   -webkit-clip-path: circle(75px at center);
   clip-path: circle(75px at center);
   max-width: 100%;
 }
+
+img.email {
+  vertical-align: middle;
+}
+
 header > .flex-container {
   justify-content: center;
 }
