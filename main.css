@@ -43,11 +43,11 @@ header > .flex-container {
 .flex-item-left {
   flex: 0 0 150px;
   text-align: right;
-  padding: 8px;
+  padding: 0px 8px;
 }
 .flex-item-right {
   flex: 1;
-  padding: 8px;
+  padding: 0px 8px;
 }
 .section {
   font-size: x-large;
@@ -56,13 +56,6 @@ header > .flex-container {
 .separator {
   border-left: 1px solid gray;
 }
-.no-vertical-space {
-  margin-top: 0px;
-  margin-bottom: 0px;
-  padding-top: 0px;
-  padding-bottom: 0px;
-}
-
 .announcement {
   color: blue;
   font-weight: bold;
