@@ -36,6 +36,11 @@ header > .flex-container {
   justify-content: center;
 }
 
+header > .flex-container > .flex-item-left,
+header > .flex-container > .flex-item-right {
+  padding: 8px;
+}
+
 .flex-container {
   display: flex;
   flex-flow: row wrap;
